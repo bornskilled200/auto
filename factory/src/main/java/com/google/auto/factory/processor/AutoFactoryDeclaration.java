@@ -55,6 +55,8 @@ abstract class AutoFactoryDeclaration {
   abstract TypeElement targetType();
   abstract Element target();
   abstract Optional<String> className();
+  abstract String prefix();
+  abstract String suffix();
   abstract TypeElement extendingType();
   abstract ImmutableSet<TypeElement> implementingTypes();
   abstract boolean allowSubclasses();
@@ -73,7 +75,7 @@ abstract class AutoFactoryDeclaration {
     if (className().isPresent()) {
       builder.append(className().get());
     } else {
-      builder.append(targetType().getSimpleName()).append("Factory");
+      builder.append(prefix()).append(targetType().getSimpleName()).append(suffix());
     }
     return builder.toString();
   }
@@ -104,7 +106,7 @@ abstract class AutoFactoryDeclaration {
           contentEquals(AutoFactory.class.getName()));
       Map<String, AnnotationValue> values =
           Mirrors.simplifyAnnotationValueMap(elements.getElementValuesWithDefaults(mirror));
-      checkState(values.size() == 4);
+      checkState(values.size() == 6);
 
       // className value is a string, so we can just call toString
       AnnotationValue classNameValue = values.get("className");
@@ -115,7 +117,23 @@ abstract class AutoFactoryDeclaration {
             element, mirror, classNameValue);
         return Optional.absent();
       }
+      AnnotationValue prefixValue = values.get("prefix");
+      String prefix = prefixValue.getValue().toString();
+      if (!prefix.isEmpty() && !isValidIdentifier(prefix)) {
+        messager.printMessage(ERROR,
+                String.format("\"%s\" is not a valid Java identifier", prefix),
+                element, mirror, prefixValue);
+        return Optional.absent();
+      }
 
+      AnnotationValue suffixValue = values.get("suffix");
+      String suffix = suffixValue.getValue().toString();
+      if (!suffix.isEmpty() && !isValidIdentifier(suffix)) {
+        messager.printMessage(ERROR,
+                String.format("\"%s\" is not a valid Java identifier", suffix),
+                element, mirror, suffixValue);
+        return Optional.absent();
+      }
       AnnotationValue extendingValue = checkNotNull(values.get("extending"));
       TypeElement extendingType = AnnotationValues.asType(extendingValue);
       if (extendingType == null) {
@@ -165,6 +183,8 @@ abstract class AutoFactoryDeclaration {
               getAnnotatedType(element),
               element,
               className.isEmpty() ? Optional.<String>absent() : Optional.of(className),
+              prefix,
+              suffix,
               extendingType,
               implementingTypes,
               allowSubclasses,

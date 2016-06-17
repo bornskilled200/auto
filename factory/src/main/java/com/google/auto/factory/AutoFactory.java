@@ -46,6 +46,8 @@ public @interface AutoFactory {
    * is {@code Foo}, then the factory name is {@code Outer_Inner_Foo}.
    */
   String className() default "";
+  String prefix() default "";
+  String suffix() default "Factory";
 
   /**
    * A list of interfaces that the generated factory is required to implement.
