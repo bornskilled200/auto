@@ -135,8 +135,15 @@ final class FactoryWriter {
       factory.addMethod(method.build());
     }
 
-    for (ImplementationMethodDescriptor methodDescriptor
+    outer:
+    for (final ImplementationMethodDescriptor methodDescriptor
         : descriptor.implementationMethodDescriptors()) {
+      for (FactoryMethodDescriptor factoryMethodDescriptor : descriptor.methodDescriptors()) {
+        if ((methodDescriptor.name().equals(factoryMethodDescriptor.name())) &&
+        (methodDescriptor.passedParameters().equals(factoryMethodDescriptor.passedParameters())) &&
+        (methodDescriptor.returnType().equals(factoryMethodDescriptor.returnType())))
+          continue outer;
+      }
       MethodSpec.Builder implementationMethod =
           methodBuilder(methodDescriptor.name())
               .addAnnotation(Override.class)

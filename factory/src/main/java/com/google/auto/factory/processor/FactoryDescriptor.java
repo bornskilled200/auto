@@ -119,7 +119,15 @@ abstract class FactoryDescriptor {
     ImmutableBiMap.Builder<FactoryMethodDescriptor, ImplementationMethodDescriptor> builder =
         ImmutableBiMap.builder();
 
-    for (FactoryMethodDescriptor factoryMethodDescriptor : factoryMethodDescriptors) {
+    outer:
+    for (final FactoryMethodDescriptor factoryMethodDescriptor : factoryMethodDescriptors) {
+
+      for (FactoryMethodDescriptor methodDescriptor2 : factoryMethodDescriptors) {
+        if (factoryMethodDescriptor.equals(methodDescriptor2))
+          continue;
+        if (factoryMethodDescriptor.passedParameters().equals(methodDescriptor2.passedParameters()) && factoryMethodDescriptor.providedParameters().isEmpty())
+          continue outer;
+      }
       for (ImplementationMethodDescriptor implementationMethodDescriptor :
           implementationMethodDescriptors) {
 
@@ -150,10 +158,17 @@ abstract class FactoryDescriptor {
     ImmutableSet.Builder<FactoryMethodDescriptor> deduplicatedMethodDescriptors =
         ImmutableSet.builder();
 
+    outer:
     for (FactoryMethodDescriptor methodDescriptor : methodDescriptors) {
       ImplementationMethodDescriptor duplicateMethodDescriptor =
           duplicateMethodDescriptors.get(methodDescriptor);
 
+      for (FactoryMethodDescriptor methodDescriptor2 : methodDescriptors) {
+        if (methodDescriptor.equals(methodDescriptor2))
+          continue;
+        if (methodDescriptor.passedParameters().equals(methodDescriptor2.passedParameters()) && methodDescriptor.providedParameters().isEmpty())
+          continue outer;
+      }
       FactoryMethodDescriptor newMethodDescriptor =
          (duplicateMethodDescriptor != null)
               ? methodDescriptor
@@ -185,7 +200,7 @@ abstract class FactoryDescriptor {
     }
 
     // Descriptors are identical if they have the same passed types in the same order.
-    return MoreTypes.equivalence().pairwise().equivalent(
+    return (factory.passedParameters().isEmpty() && implementation.passedParameters().isEmpty()) || MoreTypes.equivalence().pairwise().equivalent(
         Iterables.transform(factory.passedParameters(), Parameter.parameterToType),
         Iterables.transform(implementation.passedParameters(), Parameter.parameterToType));
   }
